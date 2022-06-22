@@ -176,7 +176,7 @@ namespace AspNetCoreMVCxUnitTest.Test.Controllers
 
             var redirect = Assert.IsAssignableFrom<NotFoundResult>(result);
 
-            Assert.Equal(404,redirect.StatusCode);
+            Assert.Equal(404, redirect.StatusCode);
         }
 
         [Fact]
@@ -191,6 +191,94 @@ namespace AspNetCoreMVCxUnitTest.Test.Controllers
             var resultProduct = Assert.IsAssignableFrom<ProductDTO>(viewResult.Model);
 
             Assert.Equal(products.First().Id, resultProduct.Id);
+        }
+
+        [Theory]
+        [InlineData("37d2310b-bcdf-4220-b19d-047256e640b5")]
+        public async void Edit_IdIsNotEqualProduct_ReturnNotFound(Guid Id)
+        {
+            var result = await _productController.Edit(new Guid(), products.First(x => x.Id == Id));
+
+            var viewResult = Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Theory]
+        [InlineData("37d2310b-bcdf-4220-b19d-047256e640b5")]
+        public async void Edit_InValidModel_ReturnView(Guid Id)
+        {
+            _productController.ModelState.AddModelError("Name", "");
+
+            var result = await _productController.Edit(Id, products.First(x => x.Id == Id));
+
+            var viewResult = Assert.IsType<ViewResult>(result);
+
+            var resultModel = Assert.IsAssignableFrom<ProductDTO>(viewResult.Model);
+
+            Assert.Equal(products.First(), resultModel);
+        }
+
+        [Theory]
+        [InlineData("37d2310b-bcdf-4220-b19d-047256e640b5")]
+        public async void Edit_ValidModelState_ReturnRedirectToAction(Guid Id)
+        {
+            var result = await _productController.Edit(Id, products.First(x => x.Id == Id));
+
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Theory]
+        [InlineData("37d2310b-bcdf-4220-b19d-047256e640b5")]
+        public async void Edit_ActionExecute_ReturnRedirectToAction(Guid Id)
+        {
+            var product = products.First(x => x.Id == Id);
+
+            _mock.Setup(x => x.UpdateAsync(It.IsAny<ProductDTO>())).Callback<ProductDTO>(x =>
+                        product = x);
+
+
+            var result = await _productController.Edit(Id, products.First(x => x.Id == Id));
+
+            _mock.Verify(x => x.UpdateAsync(It.IsAny<ProductDTO>()), Times.Once());
+        }
+
+        [Fact]
+        public async void Delete_IdIsNull_ReturnNotFound()
+        {
+            var result = await _productController.Delete(null);
+
+            Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Theory]
+        [InlineData("37d2310b-bcdf-4220-b19d-047256e640b5")]
+        public async void Delete_ProductIsNull_ReturnNotFound(Guid Id)
+        {
+            ProductDTO product = null;
+
+            _mock.Setup(x => x.GetByIdAsync(products.First().Id)).ReturnsAsync(product);
+
+            var result = await _productController.Delete(products.First().Id);
+
+            var redirect = Assert.IsAssignableFrom<NotFoundResult>(result);
+
+            Assert.Equal(404, redirect.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("37d2310b-bcdf-4220-b19d-047256e640b5")]
+        public async void Delete_ValidModel_ReturnView(Guid Id)
+        {
+            _mock.Setup(x => x.GetByIdAsync(Id)).ReturnsAsync(products.First);
+
+            var result = await _productController.Edit(products.First().Id);
+
+            var viewResult = Assert.IsType<ViewResult>(result);
+
+            var productResult = Assert.IsAssignableFrom<ProductDTO>(viewResult.Model);
+
+            Assert.Equal(products.First(), productResult);
         }
     }
 }

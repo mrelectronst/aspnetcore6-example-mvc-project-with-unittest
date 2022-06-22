@@ -114,9 +114,9 @@ namespace AspNetCoreMVCxUnitTest.Web.Controllers
         }
 
         // GET: ProductDTOes/Delete/5
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid? id)
         {
-            if (await _repository.GetByIdAsync(id) == null)
+            if (id == null)
             {
                 return NotFound();
             }
