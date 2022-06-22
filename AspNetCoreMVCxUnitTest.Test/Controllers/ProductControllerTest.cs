@@ -99,5 +99,98 @@ namespace AspNetCoreMVCxUnitTest.Test.Controllers
 
             Assert.Equal(Id, resultProduct.Id);
         }
+
+        [Fact]
+        public void Create_ActionExecute_ReturnView()
+        {
+            var result = _productController.Create();
+
+            Assert.IsType<ViewResult>(result);
+        }
+
+        [Fact]
+        public async void Create_InValidModelState_ReturnView()
+        {
+            _productController.ModelState.AddModelError("Name", "Required Name");
+
+            var result = await _productController.Create(products.First());
+
+            var viewResult = Assert.IsType<ViewResult>(result);
+
+            Assert.IsType<ProductDTO>(viewResult.Model);
+        }
+
+        [Fact]
+        public async void Create_ValidModelState_ReturnRedirectToIndex()
+        {
+            var result = await _productController.Create(products.First());
+
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async void Create_ValidModelState_CreateMethodExecute()
+        {
+            ProductDTO product = null;
+
+            _mock.Setup(x => x.CreateAsync(It.IsAny<ProductDTO>())).Callback<ProductDTO>(x =>
+                product = x);
+
+            var result = await _productController.Create(products.First());
+
+            _mock.Verify(x => x.CreateAsync(It.IsAny<ProductDTO>()), Times.Once);
+
+            Assert.Equal(products.First().Id, product.Id);
+        }
+
+        [Fact]
+        public async void Create_InValidModelState_NeverCreateMethodExecute()
+        {
+            _productController.ModelState.AddModelError("Name", "");
+
+            var result = await _productController.Create(products.First());
+
+            _mock.Verify(x => x.CreateAsync(It.IsAny<ProductDTO>()), Times.Never);
+        }
+
+        [Fact]
+        public async void Edit_IdIsNull_ReturnRedirectToAction()
+        {
+            var result = await _productController.Edit(null);
+
+            var redirect = Assert.IsType<RedirectToActionResult>(result);
+
+            Assert.Equal("Index", redirect.ActionName);
+        }
+
+        [Fact]
+        public async void Edit_ProductIsNull_ReturnNotFound()
+        {
+            ProductDTO product = null;
+
+            _mock.Setup(x => x.GetByIdAsync(products.First().Id)).ReturnsAsync(product);
+
+            var result = await _productController.Edit(products.First().Id);
+
+            var redirect = Assert.IsAssignableFrom<NotFoundResult>(result);
+
+            Assert.Equal(404,redirect.StatusCode);
+        }
+
+        [Fact]
+        public async void Edit_ActionExecute_ReturnView()
+        {
+            _mock.Setup(x => x.GetByIdAsync(products.First().Id)).ReturnsAsync(products.First);
+
+            var result = await _productController.Edit(products.First().Id);
+
+            var viewResult = Assert.IsType<ViewResult>(result);
+
+            var resultProduct = Assert.IsAssignableFrom<ProductDTO>(viewResult.Model);
+
+            Assert.Equal(products.First().Id, resultProduct.Id);
+        }
     }
 }

@@ -31,7 +31,7 @@ namespace AspNetCoreMVCxUnitTest.Web.Database.Repositories
             return await _dbSet.ToListAsync();
         }
 
-        public async Task<TEntity> GetByIdAsync(Guid Id)
+        public async Task<TEntity> GetByIdAsync(Guid? Id)
         {
             return await _dbSet.FindAsync(Id);
         }

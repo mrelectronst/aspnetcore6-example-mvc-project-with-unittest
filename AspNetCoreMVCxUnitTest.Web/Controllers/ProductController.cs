@@ -62,13 +62,20 @@ namespace AspNetCoreMVCxUnitTest.Web.Controllers
         }
 
         // GET: ProductDTOes/Edit/5
-        public async Task<IActionResult> Edit(Guid id)
+        public async Task<IActionResult> Edit(Guid? id)
         {
+            if (id == null)
+            {
+                return RedirectToAction("Index");
+            }
+
             var productDTO = await _repository.GetByIdAsync(id).ConfigureAwait(false);
+
             if (productDTO == null)
             {
                 return NotFound();
             }
+
             return View(productDTO);
         }
 
